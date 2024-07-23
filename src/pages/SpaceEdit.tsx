@@ -45,6 +45,8 @@ const SpaceEdit = () => {
 
     const [drawType, setDrawType] = useState<string>("test");
 
+    const [zoom, setZoom] = useState<number>(1);
+
     useEffect(()=>{
 
         let arr = [];
@@ -81,22 +83,13 @@ const SpaceEdit = () => {
         const handleKeyDown = (e:KeyboardEvent) => {
             if (e.key === ' ') {
                 setSpacebarStatus(true);
-            } 
-            else if (e.key === 'ArrowLeft') {
-                console.log('ArrowLeft');
-            }
-            else if (e.key === 'ArrowRight') {
-                console.log('ArrowRight');
             }
         };
 
         const handleKeyUp = (e:KeyboardEvent) => {
             if (e.key === ' ') {
                 setSpacebarStatus(false);
-            } 
-            // else if (e.key === 'ArrowLeft') {
-            //     console.log('ArrowLeft');
-            // }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -116,8 +109,8 @@ const SpaceEdit = () => {
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         const canvasPosition = {
-            x: originCanvasPosition.x + (endCanvasPosition.x - startCanvasPosition.x),
-            y: originCanvasPosition.y + (endCanvasPosition.y - startCanvasPosition.y)
+            x: (originCanvasPosition.x + (endCanvasPosition.x - startCanvasPosition.x))/zoom,
+            y: (originCanvasPosition.y + (endCanvasPosition.y - startCanvasPosition.y))/zoom
         };
 
         context.beginPath();
@@ -128,18 +121,38 @@ const SpaceEdit = () => {
         if(tableStatus.length == 0) return;
         for(let i = 0; i < tableSize.y; i++) {
             for(let j = 0; j < tableSize.x; j++) {
-                const gridX = canvasPosition.x + j*cellSize - (tableSize.x * cellSize)/2;
-                const gridY = canvasPosition.y + i*cellSize - (tableSize.y * cellSize)/2;
+                const gridX = (canvasPosition.x + j*cellSize - (tableSize.x * cellSize)/2) * zoom;
+                const gridY = (canvasPosition.y + i*cellSize - (tableSize.y * cellSize)/2) * zoom;
+                const size = cellSize*zoom;
 
                 if(tableStatus[i][j]) {
-                    context.fillRect(gridX, gridY, cellSize, cellSize);
+                    context.fillRect(gridX, gridY, size, size);
                 } else {
                     context.strokeStyle = "lightgray";
-                    context.strokeRect(gridX, gridY, cellSize, cellSize);
+                    context.strokeRect(gridX, gridY, size, size);
                 }
             }
         }
-    }, [tableStatus, originCanvasPosition, endCanvasPosition])
+    }, [tableStatus, originCanvasPosition, endCanvasPosition, zoom])
+
+    useEffect(()=>{
+        console.log(zoom);
+
+        const canvasDiv = canvasDivRef.current
+        if(canvasDiv == null) {
+            return;
+        }
+        const { width, height } = canvasDiv.getBoundingClientRect();
+
+        const getX = (originCanvasPosition.x - width/2)*zoom;
+        const getY = (originCanvasPosition.y - height/2)*zoom;
+        console.log(originCanvasPosition);
+        console.log(getX, getY);
+        // setOriginCanvasPosition({
+        //     x: originCanvasPosition.x - getX,
+        //     y: originCanvasPosition.y - getY
+        // });
+    }, [zoom]);
 
     const [firstStatus, setFirstStatus] = useState<boolean>(false);
     
@@ -147,15 +160,14 @@ const SpaceEdit = () => {
         const { offsetX, offsetY } = e.nativeEvent;
         
         setMouseStatus(true);
-        if(drawType == 'test') {
-            const x = (offsetX - originCanvasPosition.x + (tableSize.x * cellSize)/2)/cellSize;
-            const y = (offsetY - originCanvasPosition.y + (tableSize.y * cellSize)/2)/cellSize;
-            if(x < 0 || x >= tableSize.x || y < 0 || y >= tableSize.y) return;
-            console.log(x, y);
-            setFirstStatus(!tableStatus[Math.trunc(y)][Math.trunc(x)]);
-        }
         if(spacebarStatus) {
             setStartCanvasPosition({x: offsetX, y: offsetY});
+        } else if(drawType == 'test') {
+            const x = (offsetX - (originCanvasPosition.x - (tableSize.x * cellSize * zoom)/2))/(cellSize * zoom);
+            const y = (offsetY - (originCanvasPosition.y - (tableSize.y * cellSize * zoom)/2))/(cellSize * zoom);
+            if(x < 0 || x >= tableSize.x || y < 0 || y >= tableSize.y) return;
+            console.log(Math.trunc(x), Math.trunc(y));
+            setFirstStatus(!tableStatus[Math.trunc(y)][Math.trunc(x)]);
         }
     };
 
@@ -172,21 +184,26 @@ const SpaceEdit = () => {
     const canvasMouseMoveEvent = (e:React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
         const { offsetX, offsetY } = e.nativeEvent;
         if(mouseStatus) {
-            // console.log(offsetX, offsetY);
-        }
-        if(mouseStatus) {
             if(spacebarStatus) {
                 setEndCanvasPosition({x: offsetX, y: offsetY});
                 console.log(endCanvasPosition.x - startCanvasPosition.x, endCanvasPosition.y - startCanvasPosition.y);
             }
             else if(ctx) {
-                const x = (offsetX - originCanvasPosition.x + (tableSize.x * cellSize)/2)/cellSize;
-                const y = (offsetY - originCanvasPosition.y + (tableSize.y * cellSize)/2)/cellSize;
+                const x = (offsetX - (originCanvasPosition.x - (tableSize.x * cellSize * zoom)/2))/(cellSize * zoom);
+                const y = (offsetY - (originCanvasPosition.y - (tableSize.y * cellSize * zoom)/2))/(cellSize * zoom);
                 if(x < 0 || x >= tableSize.x || y < 0 || y >= tableSize.y) return;
-                console.log(x, y);
+                // console.log(x, y);
                 tableStatus[Math.trunc(y)][Math.trunc(x)] = firstStatus;
                 setTableStatus([...tableStatus]);
             }
+        }
+    }
+
+    const canvasWheelEvent = (e:React.WheelEvent<HTMLCanvasElement>) => {
+        if(e.deltaY > 0) {
+            setZoom(zoom/2);
+        } else {
+            setZoom(zoom*2);
         }
     }
 
@@ -209,11 +226,12 @@ const SpaceEdit = () => {
                 onMouseDown={canvasMouseDownEvent}
                 onMouseUp={canvasMouseUpEvent}
                 onMouseMove={canvasMouseMoveEvent}
+                onWheel={canvasWheelEvent}
                 // onMouseLeave={finishDrawing}
                 />
             </div>
             <div className='w-64'>
-
+                {zoom}
             </div>
         </div>
       </div>
