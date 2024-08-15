@@ -1,0 +1,57 @@
+
+.input-text {
+    display: flex;
+    flex-direction: column;
+    margin: 0.25rem 0;
+}
+
+.input-text > input {
+    z-index: 10;
+    position: relative;
+    padding: 0.5rem;
+    background: none;
+    width: 100%;
+    border-bottom: solid 1px lightgray;
+    transition: all 0.2s;
+}
+
+.input-text > label {
+    color: lightgray;
+    margin-left: 0.5rem;
+    margin-top: -2rem;
+    padding-bottom: 0;
+    font-size: 1.1rem;
+
+    transition: all 0.2s;
+}
+
+.input-text > span {
+    display: block;
+    position: absolute;
+    bottom: -0.25rem;
+    border-radius: 1px;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    z-index: 10;
+    transition: all 0.2s;
+    background-color: #666;
+}
+
+.input-text>input:focus, .input-text>input:valid {
+    margin-top: 1.75rem;
+    outline: none;
+}
+
+.input-text>input:focus ~ label, .input-text>input:valid ~ label {
+  font-size: 1rem;
+    margin-top: -3.75rem;
+    padding-bottom: 2.25rem;
+  color: #666;
+  font-weight: bold;
+}
+
+.input-text>input:focus ~ span, .input-text>input:valid ~ span {
+    bottom: 0rem;
+  width: 100%;
+}

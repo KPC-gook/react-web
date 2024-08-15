@@ -4,12 +4,18 @@ import './App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import SpaceEdit from './pages/SpaceEdit';
+import Search from './pages/Search';
+import MyPage from './pages/MyPage';
+import Calendar from './pages/Calendar';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />}></Route>
+        <Route path="/search" element={<Search />}></Route>
+        <Route path="/mypage" element={<MyPage />}></Route>
+        <Route path="/calendar" element={<Calendar />}></Route>
         <Route path="/space/edit" element={<SpaceEdit />}></Route>
       </Routes>
     </BrowserRouter>
